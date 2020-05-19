@@ -148,12 +148,6 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand("auth.login", async () => {
-      // Disable this until service setup
-      // const selection = await vscode.window.showQuickPick([
-      //   "Enter PAT",
-      //   "Use OAuth flow (coming soon)"
-      // ]);
-
       const selection = "Enter PAT";
       switch (selection) {
         case "Enter PAT":
