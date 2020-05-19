@@ -394,6 +394,17 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand("workflow.edit.preview", () => {
       BaseReactPanel.createOrShow(WorkflowPreview, context.extensionPath);
+
+      vscode.workspace.onDidChangeTextDocument((changeEvent) => {
+        // Check for active preview
+        // TODO: Refactor
+        if (
+          BaseReactPanel.currentPanel &&
+          BaseReactPanel.currentPanel instanceof WorkflowPreview
+        ) {
+          BaseReactPanel.currentPanel.update(changeEvent.document.getText());
+        }
+      });
     })
   );
 }

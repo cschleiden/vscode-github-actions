@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-// import { Router } from "./webviews/router";
 import "./webviews/preview/preview.css";
+import { Router } from "./webviews/router";
 
 const route: string = (document.getElementById(
   "route"
@@ -10,8 +10,7 @@ const route: string = (document.getElementById(
 /** Render router component with a loading indicator as fallback */
 ReactDOM.render(
   <React.Suspense fallback={"Loading..."}>
-    {/* <Router route={route} /> */}
-    <p>Hello world</p>
+    <Router route={route} />
   </React.Suspense>,
   document.getElementById("root") as HTMLElement
 );

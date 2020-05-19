@@ -27,6 +27,7 @@ function onDidChangeActiveTextEditor(editor?: vscode.TextEditor) {
     return;
   }
 
+  // Update metadata
   vscode.commands.executeCommand(
     "setContext",
     "githubActions:activeFile",
