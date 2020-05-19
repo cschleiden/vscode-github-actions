@@ -15,7 +15,7 @@ export function buildLogURI(
 export function parseUri(
   uri: vscode.Uri
 ): { owner: string; repo: string; jobId: number; stepName?: string } {
-  if (uri.scheme != LogScheme) {
+  if (uri.scheme !== LogScheme) {
     throw new Error("Uri is not of log scheme");
   }
 
@@ -23,6 +23,6 @@ export function parseUri(
     owner: uri.authority,
     repo: uri.path.replace("/", ""),
     jobId: parseInt(uri.query, 10),
-    stepName: uri.fragment
+    stepName: uri.fragment,
   };
 }

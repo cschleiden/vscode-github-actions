@@ -1,10 +1,11 @@
 {
 	"compilerOptions": {
+	 "baseUrl": ".",
 		"module": "commonjs",
 		"target": "es6",
 		"outDir": "dist",
 		"lib": [
-			"es6"
+			"es6", "dom",
 		],
 		"sourceMap": true,
 		"rootDir": "src",
@@ -12,6 +13,7 @@
 			"./node_modules/@types",
 			"./src/typings/"
 		],
+		"jsx": "react",
 		"strict": true   /* enable all strict type-checking options */
 		/* Additional Checks */
 		// "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */

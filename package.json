@@ -81,6 +81,11 @@
         }
       },
       {
+        "command": "workflow.edit.preview",
+        "title": "Preview workflow",
+        "when": ""
+      },
+      {
         "command": "workflow.run.open",
         "title": "Open workflow run",
         "when": "viewItem =~ /run/"
@@ -250,7 +255,7 @@
   },
   "scripts": {
     "clean": "rimraf ./dist ./out",
-    "compile": "tsc -p ./",
+    "compile": "react-scripts-ts build && tsc -p ./",
     "watch": "tsc -watch -p ./",
     "package": "npm run clean && vsce package",
     "vscode:prepublish": "webpack --mode production",
@@ -276,15 +281,19 @@
     "typescript": "^3.6.4",
     "vsce": "1.75.0",
     "vscode-test": "^1.2.2",
-    "webpack": "^4.41.5",
     "webpack-cli": "^3.3.10"
   },
   "dependencies": {
     "@octokit/rest": "17.2.1",
+    "@types/react": "^16.9.35",
+    "@types/react-dom": "^16.9.8",
     "atob": "^2.1.2",
     "btoa": "^1.2.1",
     "js-yaml": "^3.13.1",
     "keytar": "^5.0.0",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-scripts-ts": "^3.1.0",
     "ssh-config": "^3.0.0",
     "tunnel": "0.0.6",
     "tweetsodium": "0.0.4",

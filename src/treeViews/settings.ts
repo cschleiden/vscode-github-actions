@@ -121,8 +121,6 @@ export class SettingsTreeProvider
         repo: repo.repositoryName,
       });
 
-      result.data;
-
       // Work around typing issues with the consumed octokit version
       const data: any[] = (result.data as any).runners || [];
       return data.map((r) => new SelfHostedRunnerNode(repo, r, client));

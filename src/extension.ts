@@ -25,6 +25,8 @@ import { initWorkflowDocumentTracking } from "./tracker/workflowDocumentTracker"
 import { initResources } from "./treeViews/icons";
 import { SettingsTreeProvider } from "./treeViews/settings";
 import { ActionsExplorerProvider as WorkflowsTreeProvider } from "./treeViews/workflows";
+import { BaseReactPanel } from "./webviews/baseReactPanel";
+import { WorkflowPreview } from "./webviews/workflowPreview";
 import {
   getRepositoryDispatchTypes,
   getWorkflowUri,
@@ -39,7 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
   initConfiguration(context);
   initPinnedWorkflows(context);
 
-  // Track workflow
+  // Track workflow documents
   initWorkflowDocumentTracking(context);
 
   // Actions Explorer
@@ -113,7 +115,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         if (selection === undefined) {
           return;
-        } else if (selection != custom_type) {
+        } else if (selection !== custom_type) {
           event_type = selection;
         }
       }
@@ -264,6 +266,9 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  //
+  // Settings
+  //
   context.subscriptions.push(
     vscode.commands.registerCommand("settings.secret.add", async (args) => {
       const repo: Protocol = args.repo;
@@ -381,6 +386,15 @@ export function activate(context: vscode.ExtensionContext) {
       },
       new WorkflowStepLogSymbolProvider()
     )
+  );
+
+  //
+  // Editor support
+  //
+  context.subscriptions.push(
+    vscode.commands.registerCommand("workflow.edit.preview", () => {
+      BaseReactPanel.createOrShow(WorkflowPreview, context.extensionPath);
+    })
   );
 }
 

@@ -142,7 +142,7 @@ async function updatePinnedWorkflow(
       pinnedWorkflow.statusBarItem.command = undefined;
     }
 
-    const mostRecentRun = workflow_runs[0] as WorkflowRun;
+    const mostRecentRun: WorkflowRun = workflow_runs[0] as any;
     pinnedWorkflow.statusBarItem.text = `$(${getCodIconForWorkflowrun(
       mostRecentRun
     )}) ${pinnedWorkflow.workflowName}`;

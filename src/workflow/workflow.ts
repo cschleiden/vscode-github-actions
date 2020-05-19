@@ -18,7 +18,7 @@ function getEvents(doc: any): On[] {
 
   if (trigger == undefined) {
     return [];
-  } else if (typeof trigger == "string") {
+  } else if (typeof trigger === "string") {
     on.push({
       event: trigger,
     });
@@ -28,7 +28,7 @@ function getEvents(doc: any): On[] {
         event: t,
       }))
     );
-  } else if (typeof trigger == "object") {
+  } else if (typeof trigger === "object") {
     on.push(
       ...Object.keys(trigger).map((event) => {
         // Work around typing :(
@@ -72,7 +72,7 @@ export function getRepositoryDispatchTypes(path: string): string[] {
     const doc = safeLoad(readFileSync(path, "utf8"));
     if (doc) {
       const rdispatch = getEvents(doc).find(
-        (t) => t.event.toLowerCase() == "repository_dispatch"
+        (t) => t.event.toLowerCase() === "repository_dispatch"
       );
       return rdispatch?.types || [];
     }
