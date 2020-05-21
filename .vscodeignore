@@ -2,7 +2,8 @@
 node_modules
 out/
 src/
+ext-src/
 tsconfig.json
 webpack.config.js
-!node_modules/keytar
 runners
+scripts/

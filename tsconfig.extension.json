@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "module": "commonjs",
+    "target": "es6",
+    "outDir": "dist",
+    "lib": [
+      "es6",
+      "dom"
+    ],
+    "sourceMap": true,
+    "typeRoots": [
+      "./node_modules/@types",
+      "./ext-src/typings/"
+    ],
+    "jsx": "react",
+    "strict": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": false
+  },
+  "exclude": [
+    "node_modules",
+    ".vscode-test",
+    "src"
+  ],
+  "include": [
+    "./ext-src/**/*.ts",
+    "./ext-src/**/*.tsx"
+  ]
+}

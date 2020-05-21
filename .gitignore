@@ -1,3 +1,5 @@
+.yalc
+yalc.lock
 node_modules
 out
 dist
