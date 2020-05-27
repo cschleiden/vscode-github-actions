@@ -1,4 +1,5 @@
 import { Octokit } from "@octokit/rest";
+import { basename } from "path";
 import * as vscode from "vscode";
 import { setPAT } from "./auth/pat";
 import { getClient } from "./client/client";
@@ -393,12 +394,22 @@ export function activate(context: vscode.ExtensionContext) {
   //
   context.subscriptions.push(
     vscode.commands.registerCommand("workflow.edit.preview", () => {
-      console.log(context.extensionPath);
+      const document = vscode.window.activeTextEditor.document;
+
       try {
-        BaseReactPanel.createOrShow(WorkflowPreview, context.extensionPath);
+        BaseReactPanel.createOrShow(
+          WorkflowPreview,
+          context.extensionPath,
+          basename(document.fileName)
+        );
       } catch (e) {
         console.error(e);
       }
+
+      (BaseReactPanel.currentPanel as WorkflowPreview).update(
+        basename(document.fileName),
+        document.getText()
+      );
 
       vscode.workspace.onDidChangeTextDocument((changeEvent) => {
         // Check for active preview
@@ -407,7 +418,10 @@ export function activate(context: vscode.ExtensionContext) {
           BaseReactPanel.currentPanel &&
           BaseReactPanel.currentPanel instanceof WorkflowPreview
         ) {
-          BaseReactPanel.currentPanel.update(changeEvent.document.getText());
+          BaseReactPanel.currentPanel.update(
+            changeEvent.document.fileName,
+            changeEvent.document.getText()
+          );
         }
       });
     })

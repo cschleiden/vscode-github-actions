@@ -10,15 +10,19 @@ export abstract class BaseReactPanel {
 
   private static readonly viewType = "github-actions.view";
 
-  protected readonly _panel: vscode.WebviewPanel;
-  private readonly _extensionPath: string;
+  protected _panel: vscode.WebviewPanel;
   private _disposables: vscode.Disposable[] = [];
 
   protected abstract getTitle(): string;
 
   public static createOrShow<TPanel extends BaseReactPanel>(
-    Panel: new (extensionPath: string, column: vscode.ViewColumn) => TPanel,
-    extensionPath: string
+    Panel: new (
+      extensionPath: string,
+      column: vscode.ViewColumn,
+      ...args: any[]
+    ) => TPanel,
+    extensionPath: string,
+    ...args: any[]
   ) {
     // If we already have a panel, show it.
     // Otherwise, create a new panel.
@@ -27,14 +31,15 @@ export abstract class BaseReactPanel {
     } else {
       BaseReactPanel.currentPanel = new Panel(
         extensionPath,
-        vscode.ViewColumn.Beside
+        vscode.ViewColumn.Beside,
+        ...args
       );
     }
   }
 
-  constructor(extensionPath: string, column: vscode.ViewColumn) {
-    this._extensionPath = extensionPath;
+  constructor(private extensionPath: string) {}
 
+  protected showPanel(column: vscode.ViewColumn) {
     // Create and show a new webview panel
     this._panel = vscode.window.createWebviewPanel(
       BaseReactPanel.viewType,
@@ -46,7 +51,7 @@ export abstract class BaseReactPanel {
 
         // And restrict the webview to only loading content from our extension's `media` directory.
         localResourceRoots: [
-          vscode.Uri.file(path.join(this._extensionPath, "build")),
+          vscode.Uri.file(path.join(this.extensionPath, "build")),
         ],
       }
     );
@@ -88,7 +93,7 @@ export abstract class BaseReactPanel {
 
   private _getHtmlForWebview() {
     const m = readFileSync(
-      path.join(this._extensionPath, "build", "asset-manifest.json"),
+      path.join(this.extensionPath, "build", "asset-manifest.json"),
       "utf-8"
     );
     const manifest = JSON.parse(m);
@@ -96,11 +101,11 @@ export abstract class BaseReactPanel {
     const mainStyle = manifest["files"]["main.css"];
 
     const scriptPathOnDisk = vscode.Uri.file(
-      path.join(this._extensionPath, "build", mainScript)
+      path.join(this.extensionPath, "build", mainScript)
     );
     const scriptUri = scriptPathOnDisk.with({ scheme: "vscode-resource" });
     const stylePathOnDisk = vscode.Uri.file(
-      path.join(this._extensionPath, "build", mainStyle)
+      path.join(this.extensionPath, "build", mainStyle)
     );
     const styleUri = stylePathOnDisk.with({ scheme: "vscode-resource" });
 
@@ -119,7 +124,7 @@ export abstract class BaseReactPanel {
         <meta
           http-equiv="Content-Security-Policy"
           content="default-src 'none'; img-src data: vscode-resource: https:; script-src 'nonce-${nonce}' 'unsafe-eval';style-src vscode-resource: 'unsafe-inline' http: https: data:;">
-				<base href="${vscode.Uri.file(path.join(this._extensionPath, "build")).with({
+				<base href="${vscode.Uri.file(path.join(this.extensionPath, "build")).with({
           scheme: "vscode-resource",
         })}/">
 			</head>

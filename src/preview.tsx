@@ -9,7 +9,7 @@ import * as React from "react";
 import "./styles.css";
 
 export default () => {
-  const [foo, setFoo] = React.useState(1);
+  const [workflowFilePath, setWorkflowFilePath] = React.useState("");
   const [workflow, setWorkflow] = React.useState("");
 
   React.useEffect(() => {
@@ -20,6 +20,7 @@ export default () => {
       switch (message.command) {
         case "update":
           setWorkflow(message.workflow);
+          setWorkflowFilePath(message.workflowFilePath);
           break;
       }
     });
@@ -31,8 +32,8 @@ export default () => {
   let r: RuntimeModel | undefined;
 
   try {
-    const x = parse(workflow);
-    r = run(e, ".github/workflows/w.yaml", x);
+    const parsedWorkflow = parse(workflow);
+    r = run(e, workflowFilePath, parsedWorkflow);
   } catch (e) {
     console.log(e);
   }

@@ -1,14 +1,26 @@
+import * as vscode from "vscode";
 import { BaseReactPanel } from "./baseReactPanel";
 
 export class WorkflowPreview extends BaseReactPanel {
-  protected getTitle(): string {
-    return "Preview";
+  constructor(
+    extensionPath: string,
+    column: vscode.ViewColumn,
+    private workflowFilename: string
+  ) {
+    super(extensionPath);
+
+    this.showPanel(column);
   }
 
-  public update(workflow: string) {
+  protected getTitle(): string {
+    return `Preview ${this.workflowFilename}`;
+  }
+
+  public update(workflowFilePath: string, workflow: string) {
     this._panel.webview.postMessage({
       command: "update",
       workflow,
+      workflowFilePath,
     });
   }
 }

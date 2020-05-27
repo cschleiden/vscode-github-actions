@@ -83,7 +83,11 @@
       {
         "command": "workflow.edit.preview",
         "title": "Preview workflow",
-        "when": ""
+        "when": "viewItem =~ /workflow/",
+        "icon": {
+          "dark": "resources/icons/dark/open-preview.svg",
+          "light": "resources/icons/light/open-preview.svg"
+        }
       },
       {
         "command": "workflow.run.open",
@@ -167,6 +171,11 @@
         {
           "command": "explorer.triggerRun",
           "when": "githubActions:activeFile =~ /rdispatch/ && resourceExtname =~ /\\.ya?ml/",
+          "group": "navigation"
+        },
+        {
+          "command": "workflow.edit.preview",
+          "when": "resourceExtname =~ /\\.ya?ml/",
           "group": "navigation"
         }
       ],
@@ -255,9 +264,11 @@
   },
   "scripts": {
     "clean": "rimraf ./dist ./out ./build",
-    "build": "postcss src/preview.css -o src/styles.css && ./scripts/build-non-split.js && tsc -p tsconfig.extension.json",
+    "build": "yarn build-preview && yarn build-extension",
+    "build-extension": "tsc -p tsconfig.extension.json",
+    "build-preview": "postcss src/preview.css -o src/styles.css && ./scripts/build-non-split.js",
     "watch": "tsc -watch -p tsconfig.extension.json",
-    "package": "npm run clean && vsce package",
+    "package": "yarn clean && yarn build && vsce package",
     "webpack": "webpack --mode development",
     "webpack-dev": "webpack --mode development --watch"
   },
