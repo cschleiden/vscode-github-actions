@@ -66,3 +66,13 @@ You can pin workflows to the status bar per workspace, and automatically see the
 
 ## Known issues
 
+## Contributing
+
+### Structure
+
+- `./src/` - source for web-based workflow preview
+- `./ext-src/` - extension source
+
+### Building
+
+- `yarn build` - build preview and extension
