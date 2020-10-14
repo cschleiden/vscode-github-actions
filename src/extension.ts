@@ -4,6 +4,7 @@ import {
   initConfiguration,
   previewFeaturesEnabled,
 } from "./configuration/configuration";
+import { initDebugger } from "./debug";
 import { getGitHubContext, GitHubContext } from "./git/repository";
 import { LogScheme } from "./logs/constants";
 import { WorkflowStepLogProvider } from "./logs/fileProvider";
@@ -444,5 +445,7 @@ export function activate(context: vscode.ExtensionContext) {
   //
   if (previewFeaturesEnabled()) {
     init(context);
+
+    initDebugger(context);
   }
 }

@@ -25,6 +25,23 @@
     "vscode.github-authentication"
   ],
   "contributes": {
+    "breakpoints": [
+      {
+        "language": "yaml"
+      }
+    ],
+    "debuggers": [
+      {
+        "languages": [
+          "yaml"
+        ],
+        "type": "workflow",
+        "label": "GitHub Actions Workflow",
+        "program": "./dist/debugAdapter.js",
+        "runtime": "node",
+        "configurationAttributes": {}
+      }
+    ],
     "configuration": {
       "title": "GitHub Actions",
       "properties": {
@@ -92,6 +109,16 @@
         "category": "GitHub Actions",
         "title": "Trigger workflow",
         "when": "viewItem =~ /workflow/ && viewItem =~ /rdispatch/",
+        "icon": {
+          "dark": "resources/icons/dark/run.svg",
+          "light": "resources/icons/light/run.svg"
+        }
+      },
+      {
+        "command": "github-actions.debug",
+        "category": "GitHub Actions",
+        "title": "Debug workflow",
+        "when": "viewItem =~ /workflow/",
         "icon": {
           "dark": "resources/icons/dark/run.svg",
           "light": "resources/icons/light/run.svg"
@@ -197,6 +224,11 @@
         {
           "command": "github-actions.explorer.triggerRun",
           "when": "githubActions:activeFile =~ /rdispatch/ && resourceExtname =~ /\\.ya?ml/",
+          "group": "navigation"
+        },
+        {
+          "command": "github-actions.debug",
+          "when": "resourceExtname =~ /\\.ya?ml/",
           "group": "navigation"
         }
       ],
@@ -338,6 +370,7 @@
     "tweetsodium": "0.0.4",
     "util": "^0.12.1",
     "uuid": "^3.3.3",
+    "vscode-debugadapter": "^1.42.1",
     "yaml": "^1.7.2"
   }
 }
