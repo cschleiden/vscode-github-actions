@@ -9,6 +9,7 @@ import { WorkflowsTreeProvider } from "./treeViews/workflows";
 import { getGitHubContext } from "./git/repository";
 import { init } from "./workflow/diagnostics";
 import { initConfiguration } from "./configuration/configuration";
+import { initDebugger } from "./debug";
 import { initPinnedWorkflows } from "./pinnedWorkflows/pinnedWorkflows";
 import { initResources } from "./treeViews/icons";
 import { initWorkflowDocumentTracking } from "./tracker/workflowDocumentTracker";
@@ -118,4 +119,9 @@ export function activate(context: vscode.ExtensionContext) {
   // Editing features
   //
   init(context);
+
+  //
+  // Debugging
+  //
+  initDebugger(context);
 }
