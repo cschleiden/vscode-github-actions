@@ -124,16 +124,19 @@ export function buildJobMessage(
           event: "workflow_dispatch",
         }),
       },
-      env: {},
+      env: {
+        t: 2,
+        d: buildContextDict(job.env || {}),
+      },
     },
   };
 }
 
 function buildContextDict(map: {
-  [key: string]: string;
+  [key: string]: string | number | boolean;
 }): {
   k: string;
-  v: string;
+  v: string | number | boolean;
 }[] {
   return Object.keys(map).map((k) => ({
     k,
@@ -229,7 +232,7 @@ export interface JobRequestMessage {
   };
 
   contextData: {
-    [key in "github" | "needs" | "matrix" | "strategy"]?: {
+    [key in "github" | "needs" | "matrix" | "strategy" | "env"]?: {
       t: 2;
       d: { k: string; v: boolean | string | number }[];
     };
