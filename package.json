@@ -109,20 +109,14 @@
         "category": "GitHub Actions",
         "title": "Trigger workflow",
         "when": "viewItem =~ /workflow/ && viewItem =~ /rdispatch/",
-        "icon": {
-          "dark": "resources/icons/dark/run.svg",
-          "light": "resources/icons/light/run.svg"
-        }
+        "icon": "$(play)"
       },
       {
         "command": "github-actions.debug",
         "category": "GitHub Actions",
         "title": "Debug workflow",
         "when": "viewItem =~ /workflow/",
-        "icon": {
-          "dark": "resources/icons/dark/run.svg",
-          "light": "resources/icons/light/run.svg"
-        }
+        "icon": "$(debug-alt-small)"
       },
       {
         "command": "github-actions.workflow.run.open",
@@ -229,7 +223,7 @@
         {
           "command": "github-actions.debug",
           "when": "resourceExtname =~ /\\.ya?ml/",
-          "group": "navigation"
+          "group": "1_run"
         }
       ],
       "view/item/context": [
