@@ -1,5 +1,5 @@
 import { basename } from "path";
-import * as vscode from "vscode";
+import { DebugConfiguration, Uri, workspace } from "vscode";
 import {
   InitializedEvent,
   LoggingDebugSession,
@@ -13,6 +13,10 @@ import {
 import { DebugProtocol } from "vscode-debugprotocol";
 import { createRunner, Runner } from "./runner";
 
+export interface RunnerDebugConfiguration extends DebugConfiguration {
+  workflow: string;
+}
+
 interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
   workflow: string;
 }
@@ -22,11 +26,24 @@ export class RunnerDebugSession extends LoggingDebugSession {
     this._setConfigurationDone = resolve;
   });
   private _setConfigurationDone?: (value?: unknown) => void;
-  private _runner?: Runner;
-  private _uri?: vscode.Uri;
 
-  public constructor() {
+  private _runner?: Runner;
+  private workflowPath: string;
+
+  public constructor(private config: RunnerDebugConfiguration) {
     super();
+
+    this.workflowPath = Uri.parse(this.config.workflow).fsPath;
+
+    this.init();
+  }
+
+  private async init() {
+    const bytes = await workspace.fs.readFile(Uri.file(this.workflowPath));
+    const contents = Buffer.from(bytes).toString("utf8");
+
+    this._runner = createRunner(basename(this.workflowPath), contents);
+    await this._runner.init();
   }
 
   protected initializeRequest(
@@ -65,29 +82,43 @@ export class RunnerDebugSession extends LoggingDebugSession {
     response: DebugProtocol.SetBreakpointsResponse,
     args: DebugProtocol.SetBreakpointsArguments
   ): Promise<void> {
-    super.setBreakPointsRequest(response, args);
+    const breakpointsPath = args.source.path!;
 
-    // TODO: CS: Map lines to steps!
-    // const path = args.source.path as string;
-    // const clientLines = args.lines || [];
+    // This is ugly, but we need to transform the line numbers for the breakpoints to offsets until the
+    // parser supports that. We just assume that the user has the workflow open when debugging it (otherwise
+    // the button doesn't show up)
+    const textDocument = workspace.textDocuments.find(
+      (t) => t.fileName === this.workflowPath
+    );
+    if (!textDocument || breakpointsPath != this.workflowPath) {
+      // Ignore these breakpoints
+      response.body = {
+        breakpoints: (args.breakpoints || []).map((b) => ({
+          ...b,
+          verified: false,
+        })),
+      };
+      return super.setBreakPointsRequest(response, args);
+    }
 
-    // // clear all breakpoints for this file
-    // this._runtime.clearBreakpoints(path);
+    const breakpointOffsets = (args.breakpoints || []).map((b) => {
+      const line = textDocument.lineAt(b.line - 1);
+      const offset = textDocument.offsetAt(line.range.end);
+      return offset;
+    });
 
-    // // set and verify breakpoint locations
-    // const actualBreakpoints0 = clientLines.map(async l => {
-    // 	const { verified, line, id } = await this._runtime.setBreakPoint(path, this.convertClientLineToDebugger(l));
-    // 	const bp = new Breakpoint(verified, this.convertDebuggerLineToClient(line)) as DebugProtocol.Breakpoint;
-    // 	bp.id= id;
-    // 	return bp;
-    // });
-    // const actualBreakpoints = await Promise.all<DebugProtocol.Breakpoint>(actualBreakpoints0);
+    const breakpointValidationResult = await this._runner!.setBreakpoints(
+      breakpointOffsets
+    );
 
-    // // send back the actual breakpoint positions
-    // response.body = {
-    // 	breakpoints: actualBreakpoints
-    // };
-    // this.sendResponse(response);
+    response.body = {
+      breakpoints: (args.breakpoints || []).map((b, idx) => ({
+        ...b,
+        verified: breakpointValidationResult[idx],
+      })),
+    };
+
+    return super.setBreakPointsRequest(response, args);
   }
 
   protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
@@ -102,13 +133,18 @@ export class RunnerDebugSession extends LoggingDebugSession {
     response: DebugProtocol.StackTraceResponse,
     args: DebugProtocol.StackTraceArguments
   ): Promise<void> {
-    //this.awaitAndSendRequest(this._runner!.stackTrace(), response);
     const body = await this._runner!.stackTrace();
     for (const sf of body.stackFrames) {
-      sf.line = 12;
+      // Convert this from offset to line.. ugly! 🤯
+      if (sf.line != 0) {
+        const td = workspace.textDocuments.find(
+          (t) => t.fileName === this.workflowPath
+        );
+        sf.line = (td?.positionAt(sf.line).line || -1) + 1;
+      }
       sf.source = new Source(
-        basename(this._uri!.fsPath),
-        this.convertClientPathToDebugger(this._uri!.fsPath)
+        basename(this.workflowPath),
+        this.convertClientPathToDebugger(this.workflowPath)
       );
     }
     response.body = body;
@@ -144,29 +180,21 @@ export class RunnerDebugSession extends LoggingDebugSession {
     // wait until configuration has finished (and configurationDoneRequest has been called)
     await this._configurationDone;
 
-    const uri = vscode.Uri.parse(args.workflow);
-    this._uri = uri;
-
-    const bytes = await vscode.workspace.fs.readFile(uri);
-    const contents = Buffer.from(bytes).toString("utf8");
-
-    this._runner = createRunner(args.workflow, contents);
-
-    this._runner.on("output", (line: string) => {
+    this._runner!.on("output", (line: string) => {
       this.sendEvent(new OutputEvent(`${line}\n`));
     });
 
-    this._runner.on("end", () => {
+    this._runner!.on("end", () => {
       this.sendEvent(new TerminatedEvent());
     });
 
-    this._runner.on("stopped", (reason: string) => {
+    this._runner!.on("stopped", (reason: string) => {
       this.sendEvent(new StoppedEvent(reason, 1));
     });
 
     this.sendResponse(response);
 
-    await this._runner.run();
+    await this._runner!.run();
   }
 
   private async awaitAndSendRequest<T extends DebugProtocol.Response>(

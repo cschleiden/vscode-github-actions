@@ -1,10 +1,13 @@
 import * as vscode from "vscode";
-import { RunnerDebugSession } from "./runner/debugSession";
+import {
+  RunnerDebugConfiguration,
+  RunnerDebugSession,
+} from "./runner/debugSession";
 
 const factory: vscode.DebugAdapterDescriptorFactory = {
-  createDebugAdapterDescriptor: (_session) => {
+  createDebugAdapterDescriptor: (session) => {
     return new vscode.DebugAdapterInlineImplementation(
-      new RunnerDebugSession()
+      new RunnerDebugSession(session.configuration as RunnerDebugConfiguration)
     );
   },
 };
