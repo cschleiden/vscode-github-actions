@@ -1,5 +1,10 @@
-import { Job, Step } from "github-actions-parser/dist/lib/workflow";
+import {
+  Job,
+  KeyValueMap,
+  Step,
+} from "github-actions-parser/dist/lib/workflow";
 import { v4 as uuidv4 } from "uuid";
+import uuid = require("uuid");
 
 // See: https://github.com/actions/runner/blob/c8afc848403652f31f84eb362fc0696ee23cffca/src/Sdk/DTObjectTemplating/ObjectTemplating/Tokens/TokenType.cs#L5
 enum TokenType {
@@ -63,8 +68,31 @@ export interface JobRequestStep {
 export function buildJobMessage(
   fileName: string,
   jobId: string,
-  job: Job
+  job: Job,
+  additionalContexts: { [context: string]: KeyValueMap }
 ): JobRequestMessage {
+  const contextData: { [key: string]: any } = {
+    github: {
+      t: 2,
+      d: buildContextDict({
+        ref: "refs/heads/master",
+        repository: "cschleiden/local-test",
+        event: "workflow_dispatch",
+      }),
+    },
+    env: {
+      t: 2,
+      d: buildContextDict(job.env || {}),
+    },
+  };
+
+  for (const context of Object.keys(additionalContexts)) {
+    contextData[context] = {
+      t: 2,
+      d: buildContextDict(additionalContexts[context]),
+    };
+  }
+
   return {
     fileTable: [fileName],
 
@@ -80,8 +108,7 @@ export function buildJobMessage(
 
     timeline: {},
 
-    // TODO: Generate...
-    jobId: "ca395085-040a-526b-2ce8-bdc85f692774",
+    jobId: uuidv4(),
 
     jobDisplayName: job.name || jobId,
 
@@ -115,20 +142,7 @@ export function buildJobMessage(
       ],
     },
 
-    contextData: {
-      github: {
-        t: 2,
-        d: buildContextDict({
-          ref: "refs/heads/master",
-          repository: "cschleiden/local-test",
-          event: "workflow_dispatch",
-        }),
-      },
-      env: {
-        t: 2,
-        d: buildContextDict(job.env || {}),
-      },
-    },
+    contextData,
   };
 }
 
@@ -176,7 +190,7 @@ function buildScriptToken(run: string): Token {
     col: 0,
   };
 
-  const exprMatches = run.match(/\${{(.*)}}/g);
+  const exprMatches = run.match(/\${{(.*?)}}/g);
   if (!exprMatches || exprMatches.length === 0) {
     return {
       ...inf,
@@ -186,7 +200,7 @@ function buildScriptToken(run: string): Token {
   }
 
   const args: string[] = [];
-  const newRun = run.replace(/\${{(.*)}}/g, (_, token: string) => {
+  const newRun = run.replace(/\${{(.*?)}}/g, (_, token: string) => {
     const idx = args.length;
     args.push(token.trim());
     return `{${idx}}`;

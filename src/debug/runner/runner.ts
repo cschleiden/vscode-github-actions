@@ -6,8 +6,8 @@ import { Context, YAMLSequence } from "github-actions-parser/dist/types";
 import { OutputEvent } from "vscode-debugadapter";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { findNode, Kind } from "../external/findNode";
-import { buildJobMessage, JobRequestMessage } from "./message";
-import { buildPlan, LocalPlan } from "./plan";
+import { JobRequestMessage } from "./message";
+import { buildPlan, jobGenerator, LocalPlan } from "./plan";
 import { RunnerDebugProtocolServer } from "./protocolServer";
 
 export interface Runner {
@@ -123,14 +123,10 @@ class RunnerImpl extends EventEmitter implements Runner {
     this.buildPlan();
 
     // Run jobs
-    for (const job of this.plan!.jobs) {
-      const message = buildJobMessage(
-        this.fileName,
-        job.id,
-        this.workflow!.workflow!.jobs[job.id]
-      );
-
-      await this.runJob(job.id, message);
+    for (const jobDesc of this.plan!.jobs) {
+      for (const { jobId, message } of jobGenerator(this.fileName, jobDesc)) {
+        await this.runJob(jobId, message);
+      }
     }
 
     // Done!
@@ -150,7 +146,7 @@ class RunnerImpl extends EventEmitter implements Runner {
       this._protocolServer = protocolServer;
 
       const p = spawn(
-        "/Users/cschleiden/projects/runner/src/Runner.Worker/bin/Debug/netcoreapp3.1/Runner.Worker",
+        "/Users/cschleiden/playground/debug-hack/runner/src/Runner.Worker/bin/Debug/netcoreapp3.1/osx-x64/Runner.Worker",
         ["local", "--debug", "--stop-on-entry", JSON.stringify(message)],
         {}
       );
