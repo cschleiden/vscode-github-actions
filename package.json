@@ -46,6 +46,12 @@
           "description": "Whether org features should be enabled. Requires the `admin:org` scope",
           "default": false,
           "scope": "window"
+        },
+        "github-actions.remoteName": {
+          "type": "string",
+          "description": "The remote name to explorer workflows",
+          "default": "origin",
+          "scope": "window"
         }
       }
     },

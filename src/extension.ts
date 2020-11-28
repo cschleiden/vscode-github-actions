@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { enableOrgFeatures } from "./auth/auth";
-import { initConfiguration } from "./configuration/configuration";
-import { getGitHubContext, GitHubContext } from "./git/repository";
+import { initConfiguration, onRemoteNameChanged } from "./configuration/configuration";
+import { getGitHubContext, GitHubContext, resetGitHubContext } from "./git/repository";
 import { LogScheme } from "./logs/constants";
 import { WorkflowStepLogProvider } from "./logs/fileProvider";
 import { WorkflowStepLogFoldingProvider } from "./logs/foldingProvider";
@@ -57,6 +57,12 @@ export function activate(context: vscode.ExtensionContext) {
       settingsTreeProvider
     )
   );
+
+  onRemoteNameChanged(() => {
+    resetGitHubContext();
+    workflowTreeProvider.refresh();
+    settingsTreeProvider.refresh();
+  });
 
   context.subscriptions.push(
     vscode.commands.registerCommand("github-actions.explorer.refresh", () => {

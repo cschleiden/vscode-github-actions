@@ -7,6 +7,8 @@ export function initConfiguration(context: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration(getSettingsKey("workflows.pinned"))) {
         pinnedWorkflowsChangeHandlers.forEach((h) => h());
+      } else if (e.affectsConfiguration(getSettingsKey("remoteName"))) {
+        remoteNameChangedHandlers.forEach((h) => h());
       }
     })
   );
@@ -23,6 +25,11 @@ function getSettingsKey(settingsPath: string): string {
 const pinnedWorkflowsChangeHandlers: (() => void)[] = [];
 export function onPinnedWorkflowsChange(handler: () => void) {
   pinnedWorkflowsChangeHandlers.push(handler);
+}
+
+const remoteNameChangedHandlers: (() => void)[] = [];
+export function onRemoteNameChanged(handler: () => void) {
+  remoteNameChangedHandlers.push(handler);
 }
 
 export function getPinnedWorkflows(): string[] {
@@ -56,4 +63,8 @@ export async function updateOrgFeaturesEnabled(enabled: boolean) {
     enabled,
     true
   );
+}
+
+export function remoteName(): string {
+  return getConfiguration().get<string>(getSettingsKey("remoteName"), "origin");
 }

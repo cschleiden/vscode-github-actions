@@ -2,6 +2,7 @@ import { Octokit } from "@octokit/rest";
 import * as vscode from "vscode";
 import { getClient } from "../api/api";
 import { getSession } from "../auth/auth";
+import { remoteName } from "../configuration/configuration";
 import { Protocol } from "../external/protocol";
 import { GitExtension } from "../typings/git";
 import { flatten } from "../utils/array";
@@ -35,9 +36,10 @@ export async function getGitHubUrl(): Promise<string | null> {
     if (git.repositories.length > 0) {
       // To keep it very simple for now, look for the first remote in the current workspace that is a
       // github.com remote. This will be the repository for the workflow explorer.
+      const targetRemoteName = remoteName();
       const originRemotes = flatten(
         git.repositories.map((r) =>
-          r.state.remotes.filter((remote) => remote.name === "origin")
+          r.state.remotes.filter((remote) => remote.name === targetRemoteName)
         )
       );
 
