@@ -1,5 +1,14 @@
-import { complete, hover, parse } from "github-actions-parser";
 import * as vscode from "vscode";
+
+import {
+  complete,
+  findNode,
+  getPathFromNode,
+  hover,
+  parse,
+  resolveCodeAction,
+} from "github-actions-parser";
+
 import { getGitHubContext } from "../git/repository";
 
 const WorkflowSelector = {
@@ -14,9 +23,16 @@ export function init(context: vscode.ExtensionContext) {
     "."
   );
 
+  // Register hover
   vscode.languages.registerHoverProvider(
     WorkflowSelector,
     new WorkflowHoverProvider()
+  );
+
+  // Code-Actions
+  vscode.languages.registerCodeActionsProvider(
+    WorkflowSelector,
+    new WorkflowCodeActionProvider()
   );
 
   //
@@ -169,5 +185,94 @@ export class WorkflowCompletionItemProvider
     }
 
     return [];
+  }
+}
+
+export interface WorkflowCodeAction extends vscode.CodeAction {}
+
+export class WorkflowCodeActionProvider
+  implements vscode.CodeActionProvider<WorkflowCodeAction> {
+  async provideCodeActions(
+    document: vscode.TextDocument,
+    range: vscode.Range | vscode.Selection,
+    context: vscode.CodeActionContext,
+    token: vscode.CancellationToken
+  ): Promise<WorkflowCodeAction[] | undefined> {
+    const githubContext = await getGitHubContext();
+    if (!githubContext) {
+      return;
+    }
+
+    const result = await parse(
+      {
+        ...githubContext,
+        repository: githubContext.name,
+      },
+      vscode.workspace.asRelativePath(document.uri),
+      document.getText()
+    );
+
+    const currentNode = findNode(
+      result.workflowST,
+      document.offsetAt(range.start)
+    );
+    if (currentNode) {
+      console.log(currentNode);
+
+      const desc = result.nodeToDesc.get(currentNode);
+      console.log(desc);
+      if (desc?.codeActionsProvider) {
+        return desc.codeActionsProvider.provideCodeActions(
+          document.uri.toString(),
+          range,
+          desc,
+          result.workflow,
+          getPathFromNode(currentNode as any)
+        ) as any;
+      }
+    }
+
+    return [];
+  }
+
+  async resolveCodeAction(
+    codeAction: WorkflowCodeAction,
+    token: vscode.CancellationToken
+  ): Promise<WorkflowCodeAction | null | undefined> {
+    const githubContext = await getGitHubContext();
+    if (!githubContext) {
+      return;
+    }
+
+    const r = await resolveCodeAction(
+      {
+        ...githubContext,
+        repository: githubContext.name,
+      },
+      codeAction as any
+    );
+
+    if (!r) {
+      return null;
+    }
+
+    const e = new vscode.WorkspaceEdit();
+    for (const x of Object.keys(r.edit!.changes!)) {
+      e.replace(
+        vscode.Uri.parse(x),
+        r.edit!.changes![x][0].range as vscode.Range,
+        r.edit!.changes![x][0].newText
+      );
+    }
+
+    // e.replace(
+    //   vscode.window.activeTextEditor!.document.uri,
+    //   vscode.window.activeTextEditor!.selection,
+    //   "test"
+    // );
+
+    r.edit = e as any;
+
+    return r as any;
   }
 }
