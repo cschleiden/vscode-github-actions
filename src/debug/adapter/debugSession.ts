@@ -1,4 +1,3 @@
-import { basename } from "path";
 import { DebugConfiguration, Uri, workspace } from "vscode";
 import {
   InitializedEvent,
@@ -10,54 +9,56 @@ import {
   TerminatedEvent,
   Thread,
 } from "vscode-debugadapter";
-import { DebugProtocol } from "vscode-debugprotocol";
-import { createRunner, Runner } from "./runner";
+import { RunnerConnection, createRunnerConnection } from "./connection";
 
-export interface RunnerDebugConfiguration extends DebugConfiguration {
+import { DebugProtocol } from "vscode-debugprotocol";
+import { basename } from "path";
+
+const DEFAULT_THREAD = 1;
+
+export interface ActionsDebugConfiguration extends DebugConfiguration {
   workflow: string;
+
+  address: string;
+
+  port: number;
 }
 
 interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
   workflow: string;
 }
 
-export class RunnerDebugSession extends LoggingDebugSession {
+export class ActionsDebugSession extends LoggingDebugSession {
   private _configurationDone = new Promise((resolve) => {
     this._setConfigurationDone = resolve;
   });
-  private _setConfigurationDone?: (value?: unknown) => void;
 
-  private _runner?: Runner;
+  private _setConfigurationDone!: (value?: unknown) => void;
+
+  private _connection: RunnerConnection;
   private workflowPath: string;
 
-  public constructor(private config: RunnerDebugConfiguration) {
+  public constructor(private config: ActionsDebugConfiguration) {
     super();
 
     this.workflowPath = Uri.parse(this.config.workflow).fsPath;
 
-    this.init();
+    this._connection = createRunnerConnection();
   }
 
-  private async init() {
-    const bytes = await workspace.fs.readFile(Uri.file(this.workflowPath));
-    const contents = Buffer.from(bytes).toString("utf8");
-
-    this._runner = createRunner(basename(this.workflowPath), contents);
-    await this._runner.init();
-  }
-
-  protected initializeRequest(
+  protected async initializeRequest(
     response: DebugProtocol.InitializeResponse,
     args: DebugProtocol.InitializeRequestArguments
-  ): void {
+  ) {
+    // Connect to debugger
+    await this._connection.connect(this.config.address, this.config.port);
+
+    // Hard-code the capabilities for now
     response.body = response.body || {};
-
     response.body.supportsEvaluateForHovers = false;
-
     response.body.supportsConfigurationDoneRequest = true;
 
     this.sendResponse(response);
-
     this.sendEvent(new InitializedEvent());
   }
 
@@ -67,14 +68,14 @@ export class RunnerDebugSession extends LoggingDebugSession {
   ): void {
     super.configurationDoneRequest(response, args);
 
-    this._setConfigurationDone!();
+    this._setConfigurationDone();
   }
 
   protected continueRequest(
     response: DebugProtocol.ContinueResponse,
     args: DebugProtocol.ContinueArguments
   ): void {
-    this._runner!.continue();
+    this._connection.continue();
     this.sendResponse(response);
   }
 
@@ -101,22 +102,23 @@ export class RunnerDebugSession extends LoggingDebugSession {
       return super.setBreakPointsRequest(response, args);
     }
 
-    const breakpointOffsets = (args.breakpoints || []).map((b) => {
-      const line = textDocument.lineAt(b.line - 1);
-      const offset = textDocument.offsetAt(line.range.end);
-      return offset;
-    });
+    // TODO: Set breakpoints
+    // const breakpointOffsets = (args.breakpoints || []).map((b) => {
+    //   const line = textDocument.lineAt(b.line - 1);
+    //   const offset = textDocument.offsetAt(line.range.end);
+    //   return offset;
+    // });
 
-    const breakpointValidationResult = await this._runner!.setBreakpoints(
-      breakpointOffsets
-    );
+    // const breakpointValidationResult = await this._connection.setBreakpoints(
+    //   breakpointOffsets
+    // );
 
-    response.body = {
-      breakpoints: (args.breakpoints || []).map((b, idx) => ({
-        ...b,
-        verified: breakpointValidationResult[idx],
-      })),
-    };
+    // response.body = {
+    //   breakpoints: (args.breakpoints || []).map((b, idx) => ({
+    //     ...b,
+    //     verified: breakpointValidationResult[idx],
+    //   })),
+    // };
 
     return super.setBreakPointsRequest(response, args);
   }
@@ -133,7 +135,7 @@ export class RunnerDebugSession extends LoggingDebugSession {
     response: DebugProtocol.StackTraceResponse,
     args: DebugProtocol.StackTraceArguments
   ): Promise<void> {
-    const body = await this._runner!.stackTrace();
+    const body = await this._connection.stackTrace();
     for (const sf of body.stackFrames) {
       // Convert this from offset to line.. ugly! 🤯
       if (sf.line != 0) {
@@ -166,12 +168,8 @@ export class RunnerDebugSession extends LoggingDebugSession {
     args: DebugProtocol.VariablesArguments,
     request?: DebugProtocol.Request
   ) {
-    this.awaitAndSendRequest(this._runner!.variables(args), response);
+    this.awaitAndSendRequest(this._connection.variables(args), response);
   }
-
-  // protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments) {
-  //   args.
-  // }
 
   protected async launchRequest(
     response: DebugProtocol.LaunchResponse,
@@ -180,21 +178,21 @@ export class RunnerDebugSession extends LoggingDebugSession {
     // wait until configuration has finished (and configurationDoneRequest has been called)
     await this._configurationDone;
 
-    this._runner!.on("output", (line: string) => {
+    this._connection.on("output", (line: string) => {
       this.sendEvent(new OutputEvent(`${line}\n`));
     });
 
-    this._runner!.on("end", () => {
+    this._connection.on("end", () => {
       this.sendEvent(new TerminatedEvent());
     });
 
-    this._runner!.on("stopped", (reason: string) => {
-      this.sendEvent(new StoppedEvent(reason, 1));
+    this._connection.on("stopped", (reason: string) => {
+      this.sendEvent(new StoppedEvent(reason, DEFAULT_THREAD));
     });
 
     this.sendResponse(response);
 
-    await this._runner!.run();
+    await this._connection.launch();
   }
 
   private async awaitAndSendRequest<T extends DebugProtocol.Response>(
@@ -204,5 +202,11 @@ export class RunnerDebugSession extends LoggingDebugSession {
     const body = await p;
     response.body = body;
     this.sendResponse(response);
+  }
+
+  private async readWorkflow(): Promise<string> {
+    // Read workflow file
+    const bytes = await workspace.fs.readFile(Uri.file(this.workflowPath));
+    return Buffer.from(bytes).toString("utf8");
   }
 }

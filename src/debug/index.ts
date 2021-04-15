@@ -1,13 +1,16 @@
 import * as vscode from "vscode";
+
 import {
-  RunnerDebugConfiguration,
-  RunnerDebugSession,
-} from "./runner/debugSession";
+  ActionsDebugConfiguration,
+  ActionsDebugSession,
+} from "./adapter/debugSession";
 
 const factory: vscode.DebugAdapterDescriptorFactory = {
   createDebugAdapterDescriptor: (session) => {
     return new vscode.DebugAdapterInlineImplementation(
-      new RunnerDebugSession(session.configuration as RunnerDebugConfiguration)
+      new ActionsDebugSession(
+        session.configuration as ActionsDebugConfiguration
+      )
     );
   },
 };
@@ -21,9 +24,11 @@ export function initDebugger(context: vscode.ExtensionContext) {
           type: "workflow",
           name: "Debug workflow",
           request: "launch",
+          address: "127.0.0.1",
+          port: 41085,
           workflow: resource.toString(),
           stopOnEntry: true,
-        });
+        } as ActionsDebugConfiguration);
       }
     )
   );
