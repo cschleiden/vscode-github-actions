@@ -30,6 +30,12 @@
           "type": "array",
           "scope": "window"
         },
+        "github-actions.managed.repository": {
+          "description": "set the repository we want to show github actions in workspace having multiple repository",
+          "type": "string",
+          "default": "",
+          "scope": "window"
+        },
         "github-actions.workflows.pinned.refresh.enabled": {
           "type": "boolean",
           "description": "Auto-refresh pinned workflows. Note: this uses polling and counts against your GitHub API rate limit",

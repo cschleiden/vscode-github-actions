@@ -32,6 +32,13 @@ export function getPinnedWorkflows(): string[] {
   );
 }
 
+export function getManagedRepository(): string {
+  return getConfiguration().get<string>(
+    getSettingsKey("managed.repository"),
+    ""
+  );
+}
+
 export function isPinnedWorkflowsRefreshEnabled(): boolean {
   return getConfiguration().get<boolean>(
     getSettingsKey("workflows.pinned.refresh.enabled"),

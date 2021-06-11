@@ -8,6 +8,11 @@ import { flatten } from "../utils/array";
 import { getClient } from "../api/api";
 import { getSession } from "../auth/auth";
 
+import {
+  getManagedRepository
+} from "../configuration/configuration";
+import { removeListener } from "node:process";
+
 async function getGitExtension(): Promise<API | undefined> {
   const gitExtension = vscode.extensions.getExtension<GitExtension>(
     "vscode.git"
@@ -41,7 +46,8 @@ async function getGitExtension(): Promise<API | undefined> {
 export async function getGitHead(): Promise<string | undefined> {
   const git = await getGitExtension();
   if (git && git.repositories.length > 0) {
-    const head = git.repositories[0].state.HEAD;
+    
+    const head = git.repositories[git.repositories.length-1].state.HEAD;
     if (head && head.name && head.type === RefType.Head) {
       return `refs/heads/${head.name}`;
     }
@@ -50,15 +56,28 @@ export async function getGitHead(): Promise<string | undefined> {
 
 export async function getGitHubUrl(): Promise<string | null> {
   const git = await getGitExtension();
+  const managedRepository = getManagedRepository();
 
   if (git && git.repositories.length > 0) {
     // To keep it very simple for now, look for the first remote in the current workspace that is a
     // github.com remote. This will be the repository for the workflow explorer.
-    const originRemotes = flatten(
-      git.repositories.map((r) =>
-        r.state.remotes.filter((remote) => remote.name === "origin")
-      )
-    );
+    
+    let tmp;
+    if (managedRepository.length != 0) {
+      tmp = flatten(
+        git.repositories.map((r) =>
+          
+        
+        r.state.remotes.filter((remote) => (remote.name === "origin" && remote.fetchUrl?.endsWith(managedRepository)))
+        )
+      );
+    } else {
+      tmp = flatten(
+        git.repositories.map((r) =>
+          r.state.remotes.filter((remote) => (remote.name === "origin"))
+        ))
+    }
+    const originRemotes = tmp;
 
     const githubRemotes = originRemotes.filter(
       (x) => x.pushUrl?.indexOf("github.com") !== -1
