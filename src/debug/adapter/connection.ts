@@ -18,6 +18,8 @@ export interface RunnerConnection {
 
   continue(): Promise<void>;
 
+  terminate(): Promise<void>;
+
   stackTrace(): Promise<DebugProtocol.StackTraceResponse["body"]>;
 
   variables(
@@ -76,7 +78,7 @@ class RunnerConnectionImpl extends EventEmitter implements RunnerConnection {
 
         // Initialization flow
         this._protocolServer.on("initialized", async () => {
-          // await this.updateBreakpoints();
+          await this.updateBreakpoints();
 
           await this.sendRequest("configurationDone");
 
@@ -90,6 +92,10 @@ class RunnerConnectionImpl extends EventEmitter implements RunnerConnection {
 
   async launch() {
     await this.sendRequest("launch");
+  }
+
+  async terminate() {
+    await this.sendRequest("terminate");
   }
 
   async setBreakpoints(breakpoints: JobBreakpoints): Promise<void> {
@@ -180,12 +186,27 @@ class RunnerConnectionImpl extends EventEmitter implements RunnerConnection {
     if (this._state === State.Connected && this._protocolServer) {
       // TODO: Only send breakpoints for the current job?
       // await this.sendRequest("setBreakpoints", {
-      //   breakpoints: (this._breakpoints[this._jobId] || []).map(
+      //   breakpoints: (this._breakpoints["foo" /*this._jobId*/] || []).map(
       //     ({ stepIdx }) => ({
       //       line: stepIdx, // We use line as step index
       //     })
       //   ),
       // } as DebugProtocol.SetBreakpointsArguments);
+
+      // await this.sendRequest("setBreakpoints", {
+      //   breakpoints: (this._breakpoints["foo" /*this._jobId*/] || []).map(
+      //     (idx) => ({
+      //       line: idx, // We use line as step index
+      //     })
+      //   ),
+      // } as DebugProtocol.SetBreakpointsArguments);
+
+      // HACK: Break for first two steps
+      await this.sendRequest("setBreakpoints", {
+        breakpoints: ([2, 3, 4] || []).map((idx) => ({
+          line: idx, // We use line as step index
+        })),
+      } as DebugProtocol.SetBreakpointsArguments);
     }
   }
 

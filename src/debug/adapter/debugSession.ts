@@ -79,6 +79,15 @@ export class ActionsDebugSession extends LoggingDebugSession {
     this.sendResponse(response);
   }
 
+  protected async terminateRequest(
+    response: DebugProtocol.TerminateResponse,
+    args: DebugProtocol.TerminateArguments
+  ) {
+    await this._connection.terminate();
+
+    return super.terminateRequest(response, args);
+  }
+
   protected async setBreakPointsRequest(
     response: DebugProtocol.SetBreakpointsResponse,
     args: DebugProtocol.SetBreakpointsArguments
@@ -103,22 +112,22 @@ export class ActionsDebugSession extends LoggingDebugSession {
     }
 
     // TODO: Set breakpoints
-    // const breakpointOffsets = (args.breakpoints || []).map((b) => {
-    //   const line = textDocument.lineAt(b.line - 1);
-    //   const offset = textDocument.offsetAt(line.range.end);
-    //   return offset;
-    // });
+    const breakpointOffsets = (args.breakpoints || []).map((b) => {
+      const line = textDocument.lineAt(b.line - 1);
+      const offset = textDocument.offsetAt(line.range.end);
+      return offset;
+    });
 
-    // const breakpointValidationResult = await this._connection.setBreakpoints(
-    //   breakpointOffsets
-    // );
+    /*const breakpointValidationResult = */ await this._connection.setBreakpoints(
+      { ["foo"]: breakpointOffsets }
+    );
 
-    // response.body = {
-    //   breakpoints: (args.breakpoints || []).map((b, idx) => ({
-    //     ...b,
-    //     verified: breakpointValidationResult[idx],
-    //   })),
-    // };
+    response.body = {
+      breakpoints: (args.breakpoints || []).map((b, idx) => ({
+        ...b,
+        verified: true, // breakpointValidationResult[idx],
+      })),
+    };
 
     return super.setBreakPointsRequest(response, args);
   }
