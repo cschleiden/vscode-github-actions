@@ -6,7 +6,7 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"name": "Run extension PWA",
+			"name": "Run extension",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}"
 			],
@@ -16,7 +16,7 @@
 			],
 			"preLaunchTask": "${defaultBuildTask}",
 			"request": "launch",
-			"type": "pwa-extensionHost",
+			"type": "extensionHost",
 			"localRoot": "${workspaceFolder}",
 			"remoteRoot": "${workspaceFolder}/",
 			"sourceMaps": true

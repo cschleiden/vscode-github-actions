@@ -1,17 +1,21 @@
-import { parse } from "github-actions-parser";
 import { Context, YAMLSequence } from "github-actions-parser/dist/types";
-import { findNode, Kind } from "../external/findNode";
+import { Kind, findNode } from "../external/findNode";
+
+import { parse } from "github-actions-parser";
 
 export type BreakPointsByJob = {
-  [jobId: string]: { stepIdx: number; offset: number }[];
+  [jobId: string]: { stepIdx: number; offset: number; line: number }[];
 };
 
 export async function getBreakpointStepOffsets(
   workflowFileName: string,
   workflowContent: string,
-  offsets: number[]
+  breakpoints: { offset: number; line: number }[]
 ): Promise<{
-  validationState: boolean[];
+  validationState: {
+    validStep: boolean;
+    jobId?: string;
+  }[];
   mapping: BreakPointsByJob;
 }> {
   // Parse workflow
@@ -26,12 +30,17 @@ export async function getBreakpointStepOffsets(
 
   let breakpointStepIndexesByJob: BreakPointsByJob = {};
 
-  const validationState: boolean[] = [];
-  for (const offset of offsets) {
-    // Try to figure out if this
+  const validationState: {
+    validStep: boolean;
+    jobId?: string;
+  }[] = [];
+  for (const { offset, line } of breakpoints) {
+    // Try to figure out if this points to a node
     let node = findNode(workflow.workflowST, offset);
     if (!node) {
-      validationState.push(false);
+      validationState.push({
+        validStep: false,
+      });
       continue;
     }
 
@@ -51,7 +60,9 @@ export async function getBreakpointStepOffsets(
     }
 
     if (!success) {
-      validationState.push(false);
+      validationState.push({
+        validStep: false,
+      });
       continue;
     }
 
@@ -59,14 +70,18 @@ export async function getBreakpointStepOffsets(
     const step = node;
     const stepIdx = (node.parent as YAMLSequence).items.indexOf(step);
     if (stepIdx === -1) {
-      validationState.push(false);
+      validationState.push({
+        validStep: false,
+      });
       continue;
     }
 
     // Get job id
     const jobId: string = node.parent?.parent?.parent?.parent?.key?.value; // Sequence // Steps mapping // Map // Mapping
     if (!jobId) {
-      validationState.push(false);
+      validationState.push({
+        validStep: false,
+      });
       continue;
     }
 
@@ -75,10 +90,14 @@ export async function getBreakpointStepOffsets(
       {
         stepIdx,
         offset,
+        line,
       },
     ];
 
-    validationState.push(true);
+    validationState.push({
+      validStep: true,
+      jobId,
+    });
   }
 
   return {

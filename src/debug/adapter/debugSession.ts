@@ -13,11 +13,14 @@ import { RunnerConnection, createRunnerConnection } from "./connection";
 
 import { DebugProtocol } from "vscode-debugprotocol";
 import { basename } from "path";
+import { getBreakpointStepOffsets } from "./breakpoints";
 
 const DEFAULT_THREAD = 1;
 
 export interface ActionsDebugConfiguration extends DebugConfiguration {
   workflow: string;
+
+  jobId: string;
 
   address: string;
 
@@ -28,6 +31,10 @@ interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
   workflow: string;
 }
 
+/**
+ * ActionsDebugSession interfaces with VS Code, it receives VS Code Debug Protocol
+ * messages from VS Code, and maps them to requests to the RunnerConnection. It also
+ * receives messages from the runner connection and maps them back to VS Code */
 export class ActionsDebugSession extends LoggingDebugSession {
   private _configurationDone = new Promise((resolve) => {
     this._setConfigurationDone = resolve;
@@ -37,11 +44,15 @@ export class ActionsDebugSession extends LoggingDebugSession {
 
   private _connection: RunnerConnection;
   private workflowPath: string;
+  private jobId: string;
+
+  private _breakpointMapping: { [stepIdx: number]: number } = {};
 
   public constructor(private config: ActionsDebugConfiguration) {
     super();
 
     this.workflowPath = Uri.parse(this.config.workflow).fsPath;
+    this.jobId = this.config.jobId;
 
     this._connection = createRunnerConnection();
   }
@@ -50,18 +61,20 @@ export class ActionsDebugSession extends LoggingDebugSession {
     response: DebugProtocol.InitializeResponse,
     args: DebugProtocol.InitializeRequestArguments
   ) {
-    // Connect to debugger
+    // Connect to debugger server
     await this._connection.connect(this.config.address, this.config.port);
 
-    // Hard-code the capabilities for now
+    // Hard-code the capabilities we return to VSCode for now
     response.body = response.body || {};
     response.body.supportsEvaluateForHovers = false;
     response.body.supportsConfigurationDoneRequest = true;
 
+    // Return capabilities to VS Code
     this.sendResponse(response);
     this.sendEvent(new InitializedEvent());
   }
 
+  /** Received from VS Code after configuration (e.g., breakpoints are set, etc.) is done */
   protected configurationDoneRequest(
     response: DebugProtocol.ConfigurationDoneResponse,
     args: DebugProtocol.ConfigurationDoneArguments
@@ -88,6 +101,9 @@ export class ActionsDebugSession extends LoggingDebugSession {
     return super.terminateRequest(response, args);
   }
 
+  /**
+   * Receive breakpoints from VS Code and send them to the runner
+   */
   protected async setBreakPointsRequest(
     response: DebugProtocol.SetBreakpointsResponse,
     args: DebugProtocol.SetBreakpointsArguments
@@ -111,21 +127,42 @@ export class ActionsDebugSession extends LoggingDebugSession {
       return super.setBreakPointsRequest(response, args);
     }
 
-    // TODO: Set breakpoints
+    // Convert line numbers to offsets in the document
     const breakpointOffsets = (args.breakpoints || []).map((b) => {
       const line = textDocument.lineAt(b.line - 1);
       const offset = textDocument.offsetAt(line.range.end);
-      return offset;
+      return {
+        offset,
+        line: line.lineNumber,
+      };
     });
 
-    /*const breakpointValidationResult = */ await this._connection.setBreakpoints(
-      { ["foo"]: breakpointOffsets }
+    const { mapping, validationState } = await getBreakpointStepOffsets(
+      this.workflowPath,
+      textDocument.getText(),
+      breakpointOffsets
     );
 
+    // Only use breakpoints for the current job
+    const currentJobBreakpoints = mapping[this.jobId];
+
+    // Send breakpoints to runner
+    await this._connection.setBreakpoints(
+      currentJobBreakpoints.map((x) => x.stepIdx)
+    );
+
+    this._breakpointMapping = {};
+    for (const x of mapping[this.jobId]) {
+      this._breakpointMapping[x.stepIdx] = x.line + 1; // editor lines are 1-based
+    }
+
+    // Tell debugger which breakpoints are valid
     response.body = {
       breakpoints: (args.breakpoints || []).map((b, idx) => ({
         ...b,
-        verified: true, // breakpointValidationResult[idx],
+        verified:
+          validationState[idx].validStep &&
+          validationState[idx].jobId === this.jobId,
       })),
     };
 
@@ -137,6 +174,7 @@ export class ActionsDebugSession extends LoggingDebugSession {
     response.body = {
       threads: [new Thread(1, "Workflow")],
     };
+
     this.sendResponse(response);
   }
 
@@ -146,19 +184,19 @@ export class ActionsDebugSession extends LoggingDebugSession {
   ): Promise<void> {
     const body = await this._connection.stackTrace();
     for (const sf of body.stackFrames) {
-      // Convert this from offset to line.. ugly! 🤯
-      if (sf.line != 0) {
-        const td = workspace.textDocuments.find(
-          (t) => t.fileName === this.workflowPath
-        );
-        sf.line = (td?.positionAt(sf.line).line || -1) + 1;
-      }
+      // Map from step idx to line
+      const stepIdx = sf.line;
+
+      sf.line = this._breakpointMapping[stepIdx];
+
+      // Make sure the workflow is highlighted as active file
       sf.source = new Source(
         basename(this.workflowPath),
         this.convertClientPathToDebugger(this.workflowPath)
       );
     }
     response.body = body;
+
     this.sendResponse(response);
   }
 
@@ -180,15 +218,35 @@ export class ActionsDebugSession extends LoggingDebugSession {
     this.awaitAndSendRequest(this._connection.variables(args), response);
   }
 
-  protected async launchRequest(
-    response: DebugProtocol.LaunchResponse,
-    args: ILaunchRequestArguments
+  protected async evaluateRequest(
+    response: DebugProtocol.EvaluateResponse,
+    args: DebugProtocol.EvaluateArguments,
+    request?: DebugProtocol.Request
+  ) {
+    this.awaitAndSendRequest(this._connection.evaluate(args), response);
+  }
+
+  /** Received from VS Code after configurationDone handshake */
+  protected async attachRequest(
+    response: DebugProtocol.AttachResponse,
+    args: DebugProtocol.AttachRequestArguments,
+    request?: DebugProtocol.Request
   ) {
     // wait until configuration has finished (and configurationDoneRequest has been called)
     await this._configurationDone;
 
+    // Setup connection handling
     this._connection.on("output", (line: string) => {
       this.sendEvent(new OutputEvent(`${line}\n`));
+    });
+
+    this._connection.on("terminated", () => {
+      this.sendEvent(new TerminatedEvent());
+    });
+
+    this._connection.on("exited", () => {
+      // TODO: Do we need the exited event?
+      this.sendEvent(new TerminatedEvent());
     });
 
     this._connection.on("end", () => {
@@ -199,9 +257,11 @@ export class ActionsDebugSession extends LoggingDebugSession {
       this.sendEvent(new StoppedEvent(reason, DEFAULT_THREAD));
     });
 
-    this.sendResponse(response);
+    await this._connection.attach();
 
-    await this._connection.launch();
+    response.success = true;
+
+    this.sendResponse(response);
   }
 
   private async awaitAndSendRequest<T extends DebugProtocol.Response>(
@@ -211,11 +271,5 @@ export class ActionsDebugSession extends LoggingDebugSession {
     const body = await p;
     response.body = body;
     this.sendResponse(response);
-  }
-
-  private async readWorkflow(): Promise<string> {
-    // Read workflow file
-    const bytes = await workspace.fs.readFile(Uri.file(this.workflowPath));
-    return Buffer.from(bytes).toString("utf8");
   }
 }

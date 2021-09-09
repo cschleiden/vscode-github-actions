@@ -196,7 +196,6 @@ export async function getGitHubContextForDocumentUri(
 
   const workspaceUri = vscode.workspace.getWorkspaceFolder(documentUri);
   if (!workspaceUri) {
-    debugger;
     return;
   }
 

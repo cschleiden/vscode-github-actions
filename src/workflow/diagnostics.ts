@@ -4,7 +4,7 @@ import { complete, hover, parse } from "github-actions-parser";
 
 import { getGitHubContextForDocumentUri } from "../git/repository";
 
-const WorkflowSelector = {
+export const WorkflowSelector = {
   pattern: "**/.github/workflows/*.{yaml,yml}",
 };
 

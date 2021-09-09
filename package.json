@@ -13,8 +13,7 @@
     "vscode": "^1.53.0"
   },
   "extensionKind": [
-    "workspace",
-    "web"
+    "workspace"
   ],
   "capabilities": {
     "untrustedWorkspaces": {
@@ -107,9 +106,9 @@
         "icon": "$(play)"
       },
       {
-        "command": "github-actions.debug",
+        "command": "github-actions.debug.job",
         "category": "GitHub Actions",
-        "title": "Debug workflow",
+        "title": "Debug workflow job",
         "when": "viewItem =~ /workflow/",
         "icon": "$(debug-alt-small)"
       },
@@ -226,11 +225,6 @@
           "command": "github-actions.explorer.triggerRun",
           "when": "(githubActions:activeFile =~ /rdispatch/ || githubActions:activeFile =~ /wdispatch/) && resourceExtname =~ /\\.ya?ml/",
           "group": "navigation"
-        },
-        {
-          "command": "github-actions.debug",
-          "when": "resourceExtname =~ /\\.ya?ml/",
-          "group": "1_run"
         }
       ],
       "view/item/context": [
@@ -357,6 +351,10 @@
         {
           "command": "github-actions.workflow.unpin",
           "when": "false"
+        },
+        {
+          "command": "github-actions.debug.job",
+          "when": "false"
         }
       ]
     }
@@ -383,7 +381,7 @@
     "rimraf": "^3.0.1",
     "ts-loader": "^6.2.1",
     "tslint": "^5.20.0",
-    "typescript": "4.2.3",
+    "typescript": "4.3.5",
     "vsce": "1.75.0",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.10"
