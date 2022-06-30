@@ -1,7 +1,7 @@
-import { DebugProtocol } from "vscode-debugprotocol";
 import { EventEmitter } from "events";
-import { RunnerDebugProtocolServer } from "./protocolServer";
 import { Socket } from "net";
+import { DebugProtocol } from "vscode-debugprotocol";
+import { RunnerDebugProtocolServer } from "./protocolServer";
 
 /**
  * Runner connection manages the connection to a single runner debuggger
@@ -55,6 +55,7 @@ class RunnerConnectionImpl extends EventEmitter implements RunnerConnection {
       this._client.connect({
         // TODO: Use real address
         // host: "127.0.0.1",
+        host: "20.25.135.77",
         port,
       });
 

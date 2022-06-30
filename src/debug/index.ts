@@ -5,8 +5,8 @@ import {
   ActionsDebugSession,
 } from "./adapter/debugSession";
 
-import { DebugCodeLensProvider } from "./codelensprovider";
 import { WorkflowSelector } from "../workflow/diagnostics";
+import { DebugCodeLensProvider } from "./codelensprovider";
 
 const factory: vscode.DebugAdapterDescriptorFactory = {
   createDebugAdapterDescriptor: (session) => {
@@ -43,7 +43,7 @@ export function initDebugger(context: vscode.ExtensionContext) {
           type: "workflow",
           name: "Debug workflow job",
           request: "attach",
-          address: "127.0.0.1",
+          address: "20.25.135.77",
           port: 41085,
           workflow: resource.toString(),
           jobId,
@@ -62,4 +62,31 @@ export function initDebugger(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.debug.registerDebugAdapterDescriptorFactory("workflow", factory)
   );
+
+  vscode.window.registerUriHandler({
+    handleUri(uri: vscode.Uri): vscode.ProviderResult<void> {
+      const [ipQ, tokenQ] = uri.query.split("&");
+
+      const [, ip] = ipQ.split("=");
+      const [, token] = tokenQ.split("=");
+
+      vscode.debug.startDebugging(undefined, {
+        type: "workflow",
+        name: "Debug workflow job",
+        request: "attach",
+        address: "20.25.135.77",
+        port: 41085,
+        workflow:
+          "file:///Users/cschleiden/playground/debugger-test/.github/workflows/debug.yml",
+        jobId: "build",
+      } as ActionsDebugConfiguration);
+
+      // Open terminal into work folder
+      const terminal = vscode.window.createTerminal({
+        name: "Runner Filesystem",
+      });
+      terminal.show(true);
+      terminal.sendText("");
+    },
+  });
 }
