@@ -22,8 +22,9 @@
     "Other"
   ],
   "activationEvents": [
-    "onView:workflows",
-    "onView:settings",
+    "onView:github-actions.workflows",
+    "onView:github-actions.settings",
+    "onView:github-actions.current-branch",
     "workspaceContains:**/.github/workflows/**"
   ],
   "main": "./dist/extension-node.js",
