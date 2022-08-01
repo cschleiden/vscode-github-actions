@@ -5,19 +5,31 @@
   "icon": "resources/logo.png",
   "license": "MIT",
   "repository": {
+    "type": "git",
     "url": "https://github.com/cschleiden/vscode-github-actions"
+  },
+  "bugs": {
+    "url": "https://github.com/cschleiden/vscode-github-actions/issues"
   },
   "description": "GitHub Actions workflows and runs for github.com hosted repositories in VS Code",
   "version": "0.24.1",
   "engines": {
-    "vscode": "^1.60.0"
+    "vscode": "^1.68.0"
   },
   "extensionKind": [
     "workspace"
   ],
   "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
     "virtualWorkspaces": true
   },
+  "enabledApiProposals": [],
+  "extensionDependencies": [
+    "vscode.github-authentication",
+    "vscode.git-base"
+  ],
   "categories": [
     "Other"
   ],
@@ -366,16 +378,19 @@
     "clean": "rimraf ./dist ./out",
     "package": "npm run clean && vsce package",
     "build": "webpack --mode production",
+    "open-in-browser": "vscode-test-web --extensionDevelopmentPath=. --folder-uri=vscode-vfs://github/cschleiden/vscode-demo",
     "vscode:prepublish": "npm run build",
-    "watch": "webpack --watch --mode development --env esbuild --info-verbosity verbose"
+    "watch": "webpack --watch --mode development --env esbuild --info-verbosity verbose",
+    "watch-web": "webpack --watch"
   },
   "devDependencies": {
     "@types/glob": "^7.1.1",
     "@types/js-yaml": "^3.12.1",
     "@types/node": "14.14.32",
     "@types/uuid": "^3.4.6",
-    "@types/vscode": "1.60.0",
+    "@types/vscode": "1.68.1",
     "@types/yaml": "^1.2.0",
+    "@vscode/test-web": "*",
     "glob": "^7.1.5",
     "node-loader": "^0.6.0",
     "rimraf": "^3.0.1",

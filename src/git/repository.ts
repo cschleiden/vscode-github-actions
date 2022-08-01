@@ -1,42 +1,13 @@
 import * as vscode from "vscode";
 
 import { logDebug, logError } from "../log";
-import { API, GitExtension, RefType, RepositoryState } from "../typings/git";
+import { RefType, RepositoryState } from "../typings/git";
 
 import { Octokit } from "@octokit/rest";
 import { getClient } from "../api/api";
 import { getSession } from "../auth/auth";
 import { getRemoteName } from "../configuration/configuration";
 import { Protocol } from "../external/protocol";
-
-async function getGitExtension(): Promise<API | undefined> {
-  const gitExtension =
-    vscode.extensions.getExtension<GitExtension>("vscode.git");
-  if (gitExtension) {
-    if (!gitExtension.isActive) {
-      await gitExtension.activate();
-    }
-    const git = gitExtension.exports.getAPI(1);
-
-    if (git.state !== "initialized") {
-      // Wait for the plugin to be initialized
-      await new Promise<void>((resolve) => {
-        if (git.state === "initialized") {
-          resolve();
-        } else {
-          const listener = git.onDidChangeState((state) => {
-            if (state === "initialized") {
-              resolve();
-            }
-            listener.dispose();
-          });
-        }
-      });
-    }
-
-    return git;
-  }
-}
 
 export async function getGitHead(): Promise<string | undefined> {
   const git = await getGitExtension();
@@ -47,6 +18,7 @@ export async function getGitHead(): Promise<string | undefined> {
     }
   }
 }
+
 export async function getGitHubUrls(): Promise<
   | {
       workspaceUri: vscode.Uri;
