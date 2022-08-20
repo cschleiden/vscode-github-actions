@@ -20,28 +20,17 @@ export function registerTriggerWorkflowRun(context: vscode.ExtensionContext) {
       "github-actions.explorer.triggerRun",
       async (args: TriggerRunCommandOptions | vscode.Uri) => {
         let workflowUri: vscode.Uri | null = null;
+        let gitHubRepoContext: GitHubRepoContext | null = null;
+
         if (args instanceof vscode.Uri) {
           workflowUri = args;
         } else if (args.wf) {
           const wf: Workflow = args.wf;
           workflowUri = getWorkflowUri(args.gitHubRepoContext, wf.path);
+          gitHubRepoContext = args.gitHubRepoContext;
         }
 
-        if (!workflowUri) {
-          return;
-        }
-
-        // Parse
-        const workspaceFolder =
-          vscode.workspace.getWorkspaceFolder(workflowUri);
-        if (!workspaceFolder) {
-          return;
-        }
-
-        const gitHubRepoContext = await getGitHubContextForWorkspaceUri(
-          workspaceFolder.uri
-        );
-        if (!gitHubRepoContext) {
+        if (!workflowUri || !gitHubRepoContext) {
           return;
         }
 
