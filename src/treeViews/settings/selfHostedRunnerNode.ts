@@ -1,21 +1,19 @@
-import * as vscode from "vscode";
-import { GitHubRepoContext } from "../../git/repository";
-import { SelfHostedRunner } from "../../model";
-import { getAbsoluteIconPath } from "../icons";
+import * as vscode from 'vscode'
+import {GitHubRepoContext} from '../../git/repository'
+import {SelfHostedRunner} from '../../model'
+import {getAbsoluteIconPath} from '../icons'
 
 export class SelfHostedRunnerNode extends vscode.TreeItem {
   constructor(
     public readonly gitHubRepoContext: GitHubRepoContext,
-    public readonly selfHostedRunner: SelfHostedRunner
+    public readonly selfHostedRunner: SelfHostedRunner,
   ) {
-    super(selfHostedRunner.name);
+    super(selfHostedRunner.name)
 
-    this.contextValue = "runner";
-    this.tooltip = this.selfHostedRunner.status;
+    this.contextValue = 'runner'
+    this.tooltip = this.selfHostedRunner.status
     this.iconPath = getAbsoluteIconPath(
-      this.selfHostedRunner.status == "online"
-        ? "runner-online.svg"
-        : "runner-offline.svg"
-    );
+      this.selfHostedRunner.status == 'online' ? 'runner-online.svg' : 'runner-offline.svg',
+    )
   }
 }

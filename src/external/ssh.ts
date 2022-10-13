@@ -1,7 +1,7 @@
-import { parse as parseConfig } from "ssh-config";
+import {parse as parseConfig} from 'ssh-config'
 
-const SSH_URL_RE = /^(?:([^@:]+)@)?([^:/]+):?(.+)$/;
-const URL_SCHEME_RE = /^([a-z-]+):\/\//;
+const SSH_URL_RE = /^(?:([^@:]+)@)?([^:/]+):?(.+)$/
+const URL_SCHEME_RE = /^([a-z-]+):\/\//
 
 /**
  * SSH Config interface
@@ -10,15 +10,15 @@ const URL_SCHEME_RE = /^([a-z-]+):\/\//;
  * with SSH config files.
  */
 export interface Config {
-  Host: string;
-  [param: string]: string;
+  Host: string
+  [param: string]: string
 }
 
 /**
  * ConfigResolvers take a config, resolve some additional data (perhaps using
  * a config file), and return a new Config.
  */
-export type ConfigResolver = (config: Config) => Config;
+export type ConfigResolver = (config: Config) => Config
 
 /**
  * Parse and resolve an SSH url. Resolves host aliases using the configuration
@@ -47,43 +47,43 @@ export type ConfigResolver = (config: Config) => Config;
  * @returns {Config}
  */
 export const resolve = (url: string, resolveConfig = Resolvers.current) => {
-  const config = parse(url);
-  return config && resolveConfig(config);
-};
+  const config = parse(url)
+  return config && resolveConfig(config)
+}
 
 export class Resolvers {
-  static default = chainResolvers(baseResolver /*, resolverFromConfigFile()*/);
+  static default = chainResolvers(baseResolver /*, resolverFromConfigFile()*/)
 
   static fromConfig(conf: string) {
-    return chainResolvers(baseResolver, resolverFromConfig(conf));
+    return chainResolvers(baseResolver, resolverFromConfig(conf))
   }
 
-  static current = Resolvers.default;
+  static current = Resolvers.default
 }
 
 const parse = (url: string): Config | undefined => {
-  const urlMatch = URL_SCHEME_RE.exec(url);
+  const urlMatch = URL_SCHEME_RE.exec(url)
   if (urlMatch) {
-    const [fullSchemePrefix, scheme] = urlMatch;
-    if (scheme === "ssh") {
-      url = url.slice(fullSchemePrefix.length);
+    const [fullSchemePrefix, scheme] = urlMatch
+    if (scheme === 'ssh') {
+      url = url.slice(fullSchemePrefix.length)
     } else {
-      return;
+      return
     }
   }
-  const match = SSH_URL_RE.exec(url);
+  const match = SSH_URL_RE.exec(url)
   if (!match) {
-    return;
+    return
   }
-  const [, User, Host, path] = match;
-  return { User, Host, path };
-};
+  const [, User, Host, path] = match
+  return {User, Host, path}
+}
 
 function baseResolver(config: Config) {
   return {
     ...config,
-    HostName: config.Host
-  };
+    HostName: config.Host,
+  }
 }
 
 // Temporarily disable this to remove `fs` dependency
@@ -99,20 +99,18 @@ function baseResolver(config: Config) {
 // }
 
 export function resolverFromConfig(text: string): ConfigResolver {
-  const config = parseConfig(text);
-  return h => config.compute(h.Host);
+  const config = parseConfig(text)
+  return h => config.compute(h.Host)
 }
 
-function chainResolvers(
-  ...chain: (ConfigResolver | undefined)[]
-): ConfigResolver {
-  const resolvers = chain.filter(x => !!x) as ConfigResolver[];
+function chainResolvers(...chain: (ConfigResolver | undefined)[]): ConfigResolver {
+  const resolvers = chain.filter(x => !!x) as ConfigResolver[]
   return (config: Config) =>
     resolvers.reduce(
       (resolved, next) => ({
         ...resolved,
-        ...next(resolved)
+        ...next(resolved),
       }),
-      config
-    );
+      config,
+    )
 }

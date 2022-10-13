@@ -362,14 +362,17 @@
     }
   },
   "scripts": {
-    "clean": "rimraf ./dist ./out",
-    "package": "npm run clean && vsce package",
     "build": "webpack --mode production",
+    "clean": "rimraf ./dist ./out",
+    "fix": "prettier -w .",
+    "lint": "prettier -c .",
+    "open-in-browser": "vscode-test-web --extensionDevelopmentPath=. .",
+    "package": "npm run clean && vsce package",
     "vscode:prepublish": "npm run build",
-    "watch": "webpack --watch --mode development --env esbuild --info-verbosity verbose",
-    "open-in-browser": "vscode-test-web --extensionDevelopmentPath=. ."
+    "watch": "webpack --watch --mode development --env esbuild --info-verbosity verbose"
   },
   "devDependencies": {
+    "@github/prettier-config": "^0.0.6",
     "@types/js-yaml": "^3.12.1",
     "@types/node": "14.14.32",
     "@types/uuid": "^3.4.6",
@@ -379,6 +382,7 @@
     "buffer": "^6.0.3",
     "node-loader": "^0.6.0",
     "path-browserify": "^1.0.1",
+    "prettier": "^2.8.6",
     "rimraf": "^3.0.1",
     "ts-loader": "^6.2.1",
     "tslint": "^5.20.0",
@@ -398,5 +402,6 @@
     "util": "^0.12.1",
     "uuid": "^3.3.3",
     "yaml": "^1.7.2"
-  }
+  },
+  "prettier": "@github/prettier-config"
 }

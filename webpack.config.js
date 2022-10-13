@@ -1,31 +1,31 @@
 //@ts-check
 
-"use strict";
+'use strict'
 
-const path = require("path");
-const webpack = require('webpack');
+const path = require('path')
+const webpack = require('webpack')
 
 /**@type {import('webpack').Configuration}*/
 const config = {
-  entry: "./src/extension.ts", // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
-  devtool: "source-map",
+  entry: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
+  devtool: 'source-map',
   externals: {
-    vscode: "commonjs vscode",
+    vscode: 'commonjs vscode',
   },
   plugins: [
     new webpack.ProvidePlugin({
       Buffer: ['buffer', 'Buffer'],
-  }),
+    }),
   ],
   resolve: {
-    extensions: [".ts", ".js"],
+    extensions: ['.ts', '.js'],
     alias: {
-      "universal-user-agent$": "universal-user-agent/dist-node/index.js"
+      'universal-user-agent$': 'universal-user-agent/dist-node/index.js',
     },
     fallback: {
-      "buffer": require.resolve("buffer/"),
-      "path": require.resolve("path-browserify")
-    }
+      buffer: require.resolve('buffer/'),
+      path: require.resolve('path-browserify'),
+    },
   },
   module: {
     rules: [
@@ -34,38 +34,38 @@ const config = {
         exclude: /node_modules/,
         use: [
           {
-            loader: "ts-loader"
-          }
-        ]
+            loader: 'ts-loader',
+          },
+        ],
       },
       {
         test: /\.node$/,
-        use: "node-loader"
-      }
-    ]
-  }
-};
+        use: 'node-loader',
+      },
+    ],
+  },
+}
 
 const nodeConfig = {
   ...config,
-  target: "node",
+  target: 'node',
   output: {
-    path: path.resolve(__dirname, "dist"),
-    filename: "extension-node.js",
-    libraryTarget: "commonjs2",
-    devtoolModuleFilenameTemplate: "../[resource-path]",
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'extension-node.js',
+    libraryTarget: 'commonjs2',
+    devtoolModuleFilenameTemplate: '../[resource-path]',
   },
-};
+}
 
 const webConfig = {
   ...config,
-  target: "webworker",
+  target: 'webworker',
   output: {
-    path: path.resolve(__dirname, "dist"),
-    filename: "extension-web.js",
-    libraryTarget: "commonjs2",
-    devtoolModuleFilenameTemplate: "../[resource-path]",
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'extension-web.js',
+    libraryTarget: 'commonjs2',
+    devtoolModuleFilenameTemplate: '../[resource-path]',
   },
-};
+}
 
-module.exports = [nodeConfig, webConfig];
+module.exports = [nodeConfig, webConfig]
