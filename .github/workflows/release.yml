@@ -12,15 +12,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: |
           git config --global user.email "cschleiden@live.de"
           git config --global user.name "Christopher Schleiden"
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: '16'
+          cache: npm
       - run: npm version ${{ github.event.inputs.version }}
-      - run: npm install
+      - run: npm ci
       - run: npm run package
       - name: Create Release
         id: create_release
