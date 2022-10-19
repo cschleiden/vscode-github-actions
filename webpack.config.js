@@ -3,7 +3,6 @@
 "use strict";
 
 const path = require("path");
-const webpack = require('webpack');
 
 /**@type {import('webpack').Configuration}*/
 const config = {
@@ -12,11 +11,6 @@ const config = {
   externals: {
     vscode: "commonjs vscode",
   },
-  plugins: [
-    new webpack.ProvidePlugin({
-      Buffer: ['buffer', 'Buffer'],
-  }),
-  ],
   resolve: {
     extensions: [".ts", ".js"],
     alias: {

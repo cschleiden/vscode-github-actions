@@ -54,9 +54,10 @@ export async function getContextStringForWorkflow(
   path: string
 ): Promise<string> {
   try {
-    const content = await vscode.workspace.fs.readFile(vscode.Uri.file(path));
-    const file = Buffer.from(content).toString("utf8");
-    const doc = safeLoad(file);
+    const content = new TextDecoder().decode(
+      await vscode.workspace.fs.readFile(vscode.Uri.file(path))
+    )
+    const doc = safeLoad(content);
     if (doc) {
       let context = "";
 
@@ -95,8 +96,9 @@ export async function parseWorkflow(
   gitHubRepoContext: GitHubRepoContext
 ): Promise<Workflow | undefined> {
   try {
-    const b = await vscode.workspace.fs.readFile(uri);
-    const workflowInput = Buffer.from(b).toString("utf-8");
+    const workflowInput = new TextDecoder().decode(
+      await vscode.workspace.fs.readFile(uri)
+    )
     const doc = await parse(
       {
         ...gitHubRepoContext,
