@@ -2,6 +2,9 @@
 
 All notable changes to the "vscode-github-actions" extension will be documented in this file.
 
+## [v0.24.3]
+- Fix https://github.com/cschleiden/vscode-github-actions/issues/111
+
 ## [v0.24.0]
 - New "Current Branch" view
 
