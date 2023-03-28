@@ -1,7 +1,14 @@
-> **Note**
->
-> GitHub is currently working on officially supporting this extension. Read more about our plans in our [public roadmap issue](https://github.com/github/roadmap/issues/564). We will be dedicating resources to cleaning up the extension, squashing bugs, and more so your experience with Actions in VS Code is better than ever!
+# 2023-03-28: The extension is now an [official part](https://github.blog/2023-03-28-announcing-the-github-actions-extension-for-vs-code/) of the product 🎉 
 
+
+Get it here: https://marketplace.visualstudio.com/items?itemName=github.vscode-github-actions
+
+
+Find the latest code: https://github.com/github/vscode-github-actions
+
+
+
+----
 
 # GitHub Actions for VS Code
 
